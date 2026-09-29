@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Apex Protocol // Elite Tracker</title>
+  <style>
+    :root {
+      --bg: #05070b;
+      --surface: #0f131f;
+      --border: #1e2638;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.2);
+      --success: #34d399;
+      --success-glow: rgba(52, 211, 153, 0.2);
+      --danger: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #64748b;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    
+    body { 
+      background: var(--bg); 
+      color: var(--text-main); 
+      padding: 16px; 
+      padding-bottom: 90px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    #setupScreen { display: none; padding-top: 10px; }
+    #setupScreen.active { display: block; }
+
+    .setup-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 20px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+    }
+    .setup-title { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; color: var(--accent); }
+    .setup-sub { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4; }
+    
+    .form-group { margin-bottom: 14px; }
+    .form-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .form-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+    
+    .btn-ai {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+    }
+    .btn-ai:active { transform: scale(0.95); }
+
+    .form-input {
+      width: 100%;
+      background: #05070b;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    textarea.form-input { resize: vertical; min-height: 110px; font-family: monospace; }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      padding: 14px;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    #mainApp { display: none; }
+    #mainApp.active { display: block; }
+
+    header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 16px; 
+    }
+    .brand { 
+      font-size: 1.15rem; 
+      letter-spacing: 2px; 
+      font-weight: 800; 
+      text-transform: uppercase; 
+      color: var(--text-main);
+    }
+    .brand span { color: var(--accent); }
+    
+    .header-actions { display: flex; gap: 6px; align-items: center; }
+    .phase-pill { 
+      background: rgba(56, 189, 248, 0.1); 
+      border: 1px solid rgba(56, 189, 248, 0.3); 
+      color: var(--accent); 
+      padding: 6px 10px; 
+      border-radius: 20px; 
+      font-size: 0.62rem; 
+      font-weight: 700; 
+      text-transform: uppercase; 
+      letter-spacing: 1px; 
+    }
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 6px 10px;
+      border-radius: 12px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .tabs { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr 1fr; 
+      gap: 4px; 
+      background: var(--surface); 
+      padding: 4px; 
+      border-radius: 12px; 
+      border: 1px solid var(--border); 
+      margin-bottom: 16px; 
+    }
+    .tab-btn { 
+      background: transparent; 
+      border: none; 
+      color: var(--text-muted); 
+      padding: 8px 4px; 
+      font-size: 0.65rem; 
+      font-weight: 700; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+      border-radius: 9px; 
+      cursor: pointer; 
+      transition: all 0.2s; 
+      text-align: center;
+    }
+    .tab-btn.active { 
+      background: var(--text-main); 
+      color: var(--bg); 
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1); 
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .dynamic-quote {
+      background: linear-gradient(135deg, #0f131f, #161c2d);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    }
+    .quote-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .quote-badge { 
+      font-size: 0.6rem; 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      letter-spacing: 1.5px; 
+      padding: 2px 8px; 
+      border-radius: 4px; 
+      background: rgba(56, 189, 248, 0.15); 
+      color: var(--accent); 
+    }
+    .quote-body { 
+      font-size: 0.92rem; 
+      font-weight: 700; 
+      font-style: italic; 
+      color: #f1f5f9; 
+      line-height: 1.45; 
+      letter-spacing: 0.3px; 
+    }
+
+    .lockout-banner {
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid var(--danger);
+      color: #fda4af;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      display: none;
+      text-align: center;
+    }
+    .lockout-banner.active { display: block; }
+
+    .controls { display: flex; gap: 8px; margin-bottom: 16px; }
+    select { 
+      flex: 1; 
+      background: var(--surface); 
+      color: var(--text-main); 
+      border: 1px solid var(--border); 
+      padding: 12px; 
+      border-radius: var(--radius); 
+      font-size: 0.85rem; 
+      font-weight: 600; 
+      outline: none; 
+    }
+
+    .hud-card { 
+      background: var(--surface); 
+      border: 1px solid var(--border); 
+      padding: 16px; 
+      border-radius: var(--radius); 
+      margin-bottom: 16px; 
+    }
+    .hud-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+    .hud-header span:last-child { color: var(--success); font-size: 0.95rem; font-weight: 800; }
+    .track { background: #05070b; border-radius: 6px; height: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .fill { background: var(--success); height: 100%; width: 0%; transition: width 0.3s ease; box-shadow: 0 0 10px var(--success-glow); }
+
+    .task-stack { display: flex; flex-direction: column; gap: 10px; }
+    .task-card { 
+      background: var(--surface); 
+      border: 1px solid var(--border); 
+      padding: 14px 16px; 
+      border-radius: var(--radius); 
+      display: flex; 
+      align-items: center; 
+      gap: 14px; 
+      cursor: pointer; 
+      transition: all 0.2s; 
+    }
+    .task-card.locked { cursor: not-allowed; opacity: 0.85; }
+    .task-card:not(.locked):active { transform: scale(0.98); }
+    
+    .task-card.done { 
+      border-color: rgba(52, 211, 153, 0.4); 
+      background: rgba(52, 211, 153, 0.04); 
+    }
+    .task-card.done .task-name { text-decoration: line-through; color: var(--text-muted); }
+    
+    .checkbox {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #05070b;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .task-card.done .checkbox {
+      background: var(--success);
+      border-color: var(--success);
+      box-shadow: 0 0 8px var(--success-glow);
+    }
+    .checkbox::after {
+      content: '✓';
+      color: #05070b;
+      font-weight: 900;
+      font-size: 12px;
+      display: none;
+    }
+    .task-card.done .checkbox::after { display: block; }
+    .task-name { font-size: 0.88rem; font-weight: 600; line-height: 1.3; }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .stat-box { background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); text-align: center; }
+    .stat-val { font-size: 1.4rem; font-weight: 800; color: var(--accent); margin-top: 4px; }
+    .stat-lbl { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+
+    .graph-box { background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); }
+    .graph-heading { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; color: var(--text-main); }
+    .graph-sub { font-size: 0.68rem; color: var(--text-muted); margin-bottom: 14px; }
+
+    .matrix-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .m-cell { 
+      aspect-ratio: 1; 
+      background: #05070b; 
+      border: 1px solid var(--border); 
+      border-radius: 6px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 0.6rem; 
+      font-weight: 700; 
+      color: var(--text-muted); 
+    }
+    .m-cell.complete { background: var(--success); border-color: var(--success); color: #05070b; box-shadow: 0 0 6px var(--success-glow); }
+    .m-cell.partial { background: rgba(56, 189, 248, 0.2); border-color: var(--accent); color: var(--text-main); }
+
+    .grid-table-container { 
+      background: var(--surface); 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius); 
+      overflow-x: auto; 
+      padding: 12px; 
+    }
+    .custom-matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.7rem;
+    }
+    .custom-matrix-table th, .custom-matrix-table td {
+      border: 1px solid var(--border);
+      padding: 6px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .custom-matrix-table th {
+      background: #05070b;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .matrix-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      margin: 0 auto;
+      background: #05070b;
+      border: 1px solid var(--border);
+    }
+    .matrix-dot.checked {
+      background: var(--success);
+      box-shadow: 0 0 5px var(--success-glow);
+    }
+
+    .footer-note {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SETUP WIZARD -->
+  <div id="setupScreen" class="active">
+    <div class="setup-card">
+      <div class="setup-title">Initialize Protocol</div>
+      <div class="setup-sub">Enter your challenge parameters. Tap AI Auto-Generate if you want a pre-built discipline routine instantly.</div>
+      
+      <div class="form-group">
+        <label class="form-label">Challenge Name</label>
+        <input type="text" id="setupTitleInput" class="form-input" placeholder="e.g. Winter Arc Challenge" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Start Date</label>
+        <input type="date" id="setupStartDate" class="form-input" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">End Date</label>
+        <input type="date" id="setupEndDate" class="form-input" />
+      </div>
+
+      <div class="form-group">
+        <div class="form-label-row">
+          <label class="form-label" style="margin-bottom:0;">Daily Non-Negotiable Tasks</label>
+          <button type="button" class="btn-ai" onclick="aiGenerateTasks()">AI Auto-Generate Routine</button>
+        </div>
+        <textarea id="setupTasksInput" class="form-input" placeholder="Type tasks or click AI Auto-Generate..."></textarea>
+      </div>
+
+      <button class="btn-primary" onclick="initializeProtocol()">Launch Protocol HUD</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP INTERFACE -->
+  <div id="mainApp">
+    <header>
+      <div class="brand" id="appBrandTitle">Protocol <span>HUD</span></div>
+      <div class="header-actions">
+        <div class="phase-pill" id="phaseTag">Active Protocol</div>
+        <button class="btn-reset" onclick="resetProtocolSetup()" title="Reset Configuration">Reset</button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('protocol')">Protocol</button>
+      <button class="tab-btn" onclick="switchTab('analytics')">Overview</button>
+      <button class="tab-btn" onclick="switchTab('gridmatrix')">Day x Task Grid</button>
+    </div>
+
+    <!-- TAB 1: PROTOCOL -->
+    <div id="tabProtocol" class="panel active">
+      <div class="dynamic-quote">
+        <div class="quote-header-row">
+          <span class="quote-badge" id="quoteBadge">Execution HUD</span>
+          <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700;" id="quoteSub">Apex Protocol</span>
+        </div>
+        <div class="quote-body" id="quoteText">"Giving up is not in your blood. Lock in and execute."</div>
+      </div>
+
+      <div id="lockoutBanner" class="lockout-banner">🔒 Past Date Locked: History View Only</div>
+
+      <div class="controls">
+        <select id="daySelect"></select>
+      </div>
+
+      <div class="hud-card">
+        <div class="hud-header">
+          <span>Completion Progress</span>
+          <span id="progressText">0%</span>
+        </div>
+        <div class="track">
+          <div class="fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <div class="task-stack" id="taskStack"></div>
+    </div>
+
+    <!-- TAB 2: ANALYTICS OVERVIEW -->
+    <div id="tabAnalytics" class="panel">
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-lbl">Completed Days</div>
+          <div class="stat-val" id="statCompleted">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Consistency Ratio</div>
+          <div class="stat-val" id="statRatio">0%</div>
+        </div>
+      </div>
+
+      <div class="graph-box">
+        <div class="graph-heading" id="analyticsGridTitle">Consistency Grid</div>
+        <div class="graph-sub" id="analyticsGridSub">Tracking matrix. Green = 100% completed.</div>
+        <div class="matrix-grid" id="matrixGrid"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: DAY x TASK AXIS GRID -->
+    <div id="tabGridMatrix" class="panel">
+      <div class="graph-box" style="margin-bottom: 12px;">
+        <div class="graph-heading">Task Consistency Matrix</div>
+        <div class="graph-sub">Rows = Days, Columns = Tasks (T1, T2...). Green dots mean completed.</div>
+      </div>
+      <div class="grid-table-container">
+        <table class="custom-matrix-table" id="taskAxisTable">
+          <thead>
+            <tr id="tableHeaderRow">
+              <th>Day</th>
+            </tr>
+          </thead>
+          <tbody id="tableBodyRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <p>Public Open Source Protocol // Build Discipline</p>
+  </div>
+
+  <script>
+    const incompleteQuotes = [
+      "Giving up is not in your blood. Finish what you started.",
+      "Mediocrity is a choice. Push through the friction.",
+      "Excuses don't build your future. Get back to work.",
+      "You didn't start this protocol just to quit halfway. Push!",
+      "The friction breaks the weak. Prove you aren't one of them."
+    ];
+
+    const completedQuotes = [
+      "Day secured. You outworked 99% of people today. Rest up.",
+      "Absolute execution. Another clean day logged.",
+      "The compound effect in action. Unstoppable momentum!"
+    ];
+
+    let config = JSON.parse(localStorage.getItem("apex_protocol_config") || "null");
+    let timeline = [];
+
+    function aiGenerateTasks() {
+      const presets = [
+        "Wake up at 05:00 AM without snoozing\nMorning physical training session (45 mins)\nHydrate (3 Liters minimum)\nDeep work / Skill study block (2 hours)\nRead 15 pages of a book\nZero junk food or shortcuts\nIn bed & phone down by 11:00 PM",
+        "Early wake up & cold shower protocol\nDaily workout or step target (10,000 steps)\nFocused study or work block\nSkill upskilling session (coding/languages)\nClean nutrition compliance\nPhone screen time limit under 2 hours\nPlan tomorrow before sleep"
+      ];
+      document.getElementById("setupTasksInput").value = presets[Math.floor(Math.random() * presets.length)];
+      document.getElementById("setupTitleInput").value = "Apex Elite Protocol";
+    }
+
+    function buildTimeline() {
+      timeline = [];
+      if (!config) return;
+      const startParts = config.startDate.split("-");
+      const endParts = config.endDate.split("-");
+      
+      let curr = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]));
+      let end = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]));
+
+      while (curr <= end) {
+        timeline.push(new Date(curr));
+        curr.setDate(curr.getDate() + 1);
+      }
+    }
+
+    function initializeProtocol() {
+      const title = document.getElementById("setupTitleInput").value.trim() || "Challenge";
+      const start = document.getElementById("setupStartDate").value;
+      const end = document.getElementById("setupEndDate").value;
+      const rawTasks = document.getElementById("setupTasksInput").value;
+
+      const tasks = rawTasks.split("\n").map(t => t.trim()).filter(t => t.length > 0);
+
+      if (!start || !end || tasks.length === 0) {
+        alert("Please provide valid start date, end date, and at least one task.");
+        return;
+      }
+
+      if (new Date(start) > new Date(end)) {
+        alert("Start date cannot be after end date.");
+        return;
+      }
+
+      config = { title, startDate: start, endDate: end, habits: tasks };
+      localStorage.setItem("apex_protocol_config", JSON.stringify(config));
+      bootApp();
+    }
+
+    function resetProtocolSetup() {
+      if (confirm("Resetting will clear your current configuration setup. Proceed?")) {
+        localStorage.removeItem("apex_protocol_config");
+        document.getElementById("mainApp").classList.remove("active");
+        document.getElementById("setupScreen").classList.add("active");
+      }
+    }
+
+    function bootApp() {
+      if (!config) {
+        document.getElementById("setupScreen").classList.add("active");
+        document.getElementById("mainApp").classList.remove("active");
+        return;
+      }
+
+      document.getElementById("setupScreen").classList.remove("active");
+      document.getElementById("mainApp").classList.add("active");
+
+      document.getElementById("appBrandTitle").innerHTML = `${config.title.split(" ")[0]} <span>${config.title.split(" ").slice(1).join(" ") || "Protocol"}</span>`;
+      document.getElementById("analyticsGridTitle").textContent = `${config.title} Matrix`;
+      document.getElementById("analyticsGridSub").textContent = `${config.startDate} to ${config.endDate} mapping matrix. Green = 100% completed.`;
+
+      buildTimeline();
+
+      const daySelect = document.getElementById("daySelect");
+      daySelect.innerHTML = "";
+      timeline.forEach((d, i) => {
+        const opt = document.createElement("option");
+        const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        opt.value = d.toISOString().split("T")[0];
+        opt.textContent = `Day ${i + 1} — ${label}`;
+        daySelect.appendChild(opt);
+      });
+
+      daySelect.onchange = (e) => renderProtocol(e.target.value);
+
+      const todayStr = new Date().toISOString().split("T")[0];
+      const match = timeline.find(d => d.toISOString().split("T")[0] === todayStr);
+      daySelect.value = match ? todayStr : timeline[0].toISOString().split("T")[0];
+
+      renderProtocol(daySelect.value);
+      renderAnalytics();
+      renderTaskAxisGrid();
+    }
+
+    function dbKey(dateStr) {
+      return `apex_data_${config.startDate}_${dateStr}`;
+    }
+
+    function updateQuote(pct) {
+      const quoteBadge = document.getElementById("quoteBadge");
+      const quoteText = document.getElementById("quoteText");
+      const quoteSub = document.getElementById("quoteSub");
+
+      if (pct === 100) {
+        quoteBadge.textContent = "SUCCESS // SECURED";
+        quoteBadge.style.color = "var(--success)";
+        quoteBadge.style.background = "rgba(52, 211, 153, 0.15)";
+        quoteSub.textContent = "Objective Complete";
+        const q = completedQuotes[Math.floor(Math.random() * completedQuotes.length)];
+        quoteText.textContent = `"${q}"`;
+      } else {
+        quoteBadge.textContent = "CRITICAL // INCOMPLETE";
+        quoteBadge.style.color = "var(--accent)";
+        quoteBadge.style.background = "rgba(56, 189, 248, 0.15)";
+        quoteSub.textContent = "Push Harder";
+        const q = incompleteQuotes[Math.floor(Math.random() * incompleteQuotes.length)];
+        quoteText.textContent = `"${q}"`;
+      }
+    }
+
+    function renderProtocol(dateStr) {
+      const idx = timeline.findIndex(d => d.toISOString().split("T")[0] === dateStr);
+      document.getElementById("phaseTag").textContent = `Day ${idx + 1} of ${timeline.length}`;
+
+      const realTodayStr = new Date().toISOString().split("T")[0];
+      const isPastDate = dateStr < realTodayStr;
+
+      const lockoutBanner = document.getElementById("lockoutBanner");
+      if (isPastDate) {
+        lockoutBanner.classList.add("active");
+      } else {
+        lockoutBanner.classList.remove("active");
+      }
+
+      const saved = JSON.parse(localStorage.getItem(dbKey(dateStr)) || "{}");
+      const taskStack = document.getElementById("taskStack");
+      taskStack.innerHTML = "";
+      let completedCount = 0;
+
+      config.habits.forEach((habit, hIdx) => {
+        const isDone = !!saved[hIdx];
+        if (isDone) completedCount++;
+
+        const item = document.createElement("div");
+        item.className = `task-card ${isDone ? "done" : ""} ${isPastDate ? "locked" : ""}`;
+        item.innerHTML = `
+          <div class="checkbox"></div>
+          <div class="task-name">${habit}</div>
+        `;
+
+        if (!isPastDate) {
+          item.addEventListener("click", () => {
+            saved[hIdx] = !isDone;
+            localStorage.setItem(dbKey(dateStr), JSON.stringify(saved));
+            renderProtocol(dateStr);
+            renderAnalytics();
+            renderTaskAxisGrid();
+          });
+        } else {
+          item.title = "Past dates are locked to prevent cheating.";
+        }
+
+        taskStack.appendChild(item);
+      });
+
+      const pct = config.habits.length > 0 ? Math.round((completedCount / config.habits.length) * 100) : 0;
+      document.getElementById("progressFill").style.width = pct + "%";
+      document.getElementById("progressText").textContent = pct + "%";
+      updateQuote(pct);
+    }
+
+    function renderAnalytics() {
+      let fullDays = 0;
+      let totalAccumulatedPct = 0;
+      const grid = document.getElementById("matrixGrid");
+      grid.innerHTML = "";
+
+      timeline.forEach((d, i) => {
+        const dStr = d.toISOString().split("T")[0];
+        const data = JSON.parse(localStorage.getItem(dbKey(dStr)) || "{}");
+        let doneCount = 0;
+        config.habits.forEach((_, h) => { if (data[h]) doneCount++; });
+
+        const p = config.habits.length > 0 ? (doneCount / config.habits.length) * 100 : 0;
+        totalAccumulatedPct += p;
+        if (p === 100) fullDays++;
+
+        const cell = document.createElement("div");
+        cell.className = "m-cell";
+        cell.textContent = i + 1;
+
+        if (p === 100) cell.classList.add("complete");
+        else if (p > 0) cell.classList.add("partial");
+        
+        grid.appendChild(cell);
+      });
+
+      document.getElementById("statCompleted").textContent = fullDays;
+      document.getElementById("statRatio").textContent = Math.round(totalAccumulatedPct / timeline.length) + "%";
+    }
+
+    function renderTaskAxisGrid() {
+      const headerRow = document.getElementById("tableHeaderRow");
+      const bodyRows = document.getElementById("tableBodyRows");
+
+      let headerHTML = `<th>Day</th>`;
+      config.habits.forEach((_, hIdx) => {
+        headerHTML += `<th>T${hIdx + 1}</th>`;
+      });
+      headerRow.innerHTML = headerHTML;
+
+      let bodyHTML = "";
+      timeline.forEach((d, dIdx) => {
+        const dStr = d.toISOString().split("T")[0];
+        const saved = JSON.parse(localStorage.getItem(dbKey(dStr)) || "{}");
+        
+        bodyHTML += `<tr><td style="font-weight:700; color:var(--text-muted);">D${dIdx + 1}</td>`;
+        config.habits.forEach((_, hIdx) => {
+          const checked = saved[hIdx] ? "checked" : "";
+          bodyHTML += `<td><div class="matrix-dot ${checked}" title="Task ${hIdx + 1}"></div></td>`;
+        });
+        bodyHTML += `</tr>`;
+      });
+      bodyRows.innerHTML = bodyHTML;
+    }
+
+    window.switchTab = function(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+      if (tab === 'protocol') {
+        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+        document.getElementById('tabProtocol').classList.add('active');
+      } else if (tab === 'analytics') {
+        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+        document.getElementById('tabAnalytics').classList.add('active');
+        renderAnalytics();
+      } else {
+        document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+        document.getElementById('tabGridMatrix').classList.add('active');
+        renderTaskAxisGrid();
+      }
+    };
+
+    bootApp();
+  </script>
+</body>
+</html>
