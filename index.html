@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Apex Protocol // Elite Tracker</title>
   <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#38bdf8">
   <style>
     :root {
       --bg: #05070b;
@@ -382,7 +383,7 @@
       <div class="form-group">
         <div class="form-label-row">
           <label class="form-label" style="margin-bottom:0;">Daily Non-Negotiable Tasks</label>
-          <button type="button" class="btn-ai" onclick="aiGenerateTasks()">AI Auto-Generate Routine</button>
+          <button type="button" class="btn-ai" onclick="aiGenerateTasks()">✨ AI Auto-Generate Routine</button>
         </div>
         <textarea id="setupTasksInput" class="form-input" placeholder="Type tasks or click AI Auto-Generate..."></textarea>
       </div>
@@ -480,6 +481,13 @@
   </div>
 
   <script>
+    // Register Service Worker for PWA installation support
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+
     const incompleteQuotes = [
       "Giving up is not in your blood. Finish what you started.",
       "Mediocrity is a choice. Push through the friction.",
