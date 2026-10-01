@@ -74,7 +74,7 @@
       font-size: 0.85rem;
       outline: none;
     }
-    textarea.form-input { resize: vertical; min-height: 110px; font-family: monospace; }
+    textarea.form-input { resize: vertical; min-height: 120px; font-family: monospace; }
 
     .btn-primary {
       width: 100%;
@@ -363,7 +363,7 @@
   <div id="setupScreen" class="active">
     <div class="setup-card">
       <div class="setup-title">Initialize Protocol</div>
-      <div class="setup-sub">Enter your challenge parameters. Today's date is automatically set as Day 1.</div>
+      <div class="setup-sub">Enter your challenge parameters. Today's date is automatically locked as Day 1.</div>
       
       <div class="form-group">
         <label class="form-label">Challenge Name</label>
@@ -371,7 +371,7 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Start Date (Auto-locked to Today)</label>
+        <label class="form-label">Start Date (Auto-locked)</label>
         <input type="date" id="setupStartDate" class="form-input" readonly style="opacity: 0.7; cursor: not-allowed;" />
       </div>
 
@@ -504,16 +504,23 @@
     let config = JSON.parse(localStorage.getItem("apex_protocol_config") || "null");
     let timeline = [];
 
-    // Automatically set today's date on load
-    const todayISO = new Date().toISOString().split("T")[0];
+    // Fix timezone offset and strictly lock to local calendar date
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayISO = `${year}-${month}-${day}`;
+    
     document.getElementById("setupStartDate").value = todayISO;
     
-    // Default end date (e.g., 90 days later or Dec 31)
-    const defaultEnd = new Date();
+    const defaultEnd = new Date(now);
     defaultEnd.setDate(defaultEnd.getDate() + 90);
-    document.getElementById("setupEndDate").value = defaultEnd.toISOString().split("T")[0];
+    const endYear = defaultEnd.getFullYear();
+    const endMonth = String(defaultEnd.getMonth() + 1).padStart(2, '0');
+    const endDay = String(defaultEnd.getDate()).padStart(2, '0');
+    document.getElementById("setupEndDate").value = `${endYear}-${endMonth}-${endDay}`;
 
-    // Default tasks including clean self-control focus
+    // Default tasks with custom self-control/purity rule included
     document.getElementById("setupTasksInput").value = 
       "Wake up at 05:00 AM (Zero snoozing)\n" +
       "Morning Workout (40 min session complete)\n" +
@@ -526,10 +533,12 @@
       "In bed & phone down by 11:30 PM";
 
     function aiGenerateTasks() {
-      const presets = [
-        "Wake up at 05:00 AM without snoozing\nMorning physical training session (45 mins)\nHydrate (3 Liters minimum)\nDeep work / Skill study block (2 hours)\nComplete self-control (Zero porn/masturbation)\nRead 15 pages of a book\nIn bed & phone down by 11:00 PM"
-      ];
-      document.getElementById("setupTasksInput").value = presets[0];
+      document.getElementById("setupTasksInput").value = 
+        "Wake up at 05:00 AM without snoozing\n" +
+        "Morning physical training session (45 mins)\nHydrate (3 Liters minimum)\n" +
+        "Deep work / Skill study block (2 hours)\n" +
+        "Complete self-discipline (Zero porn/masturbation)\n" +
+        "Read 15 pages of a book\nIn bed & phone down by 11:00 PM";
       document.getElementById("setupTitleInput").value = "Apex Elite Protocol";
     }
 
@@ -594,14 +603,22 @@
       timeline.forEach((d, i) => {
         const opt = document.createElement("option");
         const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-        opt.value = d.toISOString().split("T")[0];
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(d.getDate()).padStart(2, '0');
+        opt.value = `${y}-${m}-${dayStr}`;
         opt.textContent = `Day ${i + 1} — ${label}`;
         daySelect.appendChild(opt);
       });
 
       daySelect.onchange = (e) => renderProtocol(e.target.value);
 
-      const match = timeline.find(d => d.toISOString().split("T")[0] === todayISO);
+      const match = timeline.find(d => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${dayStr}` === todayISO;
+      });
       daySelect.value = match ? todayISO : timeline[0].toISOString().split("T")[0];
 
       renderProtocol(daySelect.value);
@@ -636,8 +653,13 @@
     }
 
     function renderProtocol(dateStr) {
-      const idx = timeline.findIndex(d => d.toISOString().split("T")[0] === dateStr);
-      document.getElementById("phaseTag").textContent = `Day ${idx + 1} of ${timeline.length}`;
+      const idx = timeline.findIndex(d => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${dayStr}` === dateStr;
+      });
+      document.getElementById("phaseTag").textContent = `Day ${idx >= 0 ? idx + 1 : 1} of ${timeline.length}`;
 
       const isPastDate = dateStr < todayISO;
       const lockoutBanner = document.getElementById("lockoutBanner");
@@ -691,7 +713,11 @@
       grid.innerHTML = "";
 
       timeline.forEach((d, i) => {
-        const dStr = d.toISOString().split("T")[0];
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(d.getDate()).padStart(2, '0');
+        const dStr = `${y}-${m}-${dayStr}`;
+
         const data = JSON.parse(localStorage.getItem(dbKey(dStr)) || "{}");
         let doneCount = 0;
         config.habits.forEach((_, h) => { if (data[h]) doneCount++; });
@@ -726,7 +752,11 @@
 
       let bodyHTML = "";
       timeline.forEach((d, dIdx) => {
-        const dStr = d.toISOString().split("T")[0];
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(d.getDate()).padStart(2, '0');
+        const dStr = `${y}-${m}-${dayStr}`;
+
         const saved = JSON.parse(localStorage.getItem(dbKey(dStr)) || "{}");
         
         bodyHTML += `<tr><td style="font-weight:700; color:var(--text-muted);">D${dIdx + 1}</td>`;
