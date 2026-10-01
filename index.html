@@ -363,16 +363,16 @@
   <div id="setupScreen" class="active">
     <div class="setup-card">
       <div class="setup-title">Initialize Protocol</div>
-      <div class="setup-sub">Enter your challenge parameters. Tap AI Auto-Generate if you want a pre-built discipline routine instantly.</div>
+      <div class="setup-sub">Enter your challenge parameters. Today's date is automatically set as Day 1.</div>
       
       <div class="form-group">
         <label class="form-label">Challenge Name</label>
-        <input type="text" id="setupTitleInput" class="form-input" placeholder="e.g. Winter Arc Challenge" />
+        <input type="text" id="setupTitleInput" class="form-input" value="Winter Arc Challenge" />
       </div>
 
       <div class="form-group">
-        <label class="form-label">Start Date</label>
-        <input type="date" id="setupStartDate" class="form-input" />
+        <label class="form-label">Start Date (Auto-locked to Today)</label>
+        <input type="date" id="setupStartDate" class="form-input" readonly style="opacity: 0.7; cursor: not-allowed;" />
       </div>
 
       <div class="form-group">
@@ -385,7 +385,7 @@
           <label class="form-label" style="margin-bottom:0;">Daily Non-Negotiable Tasks</label>
           <button type="button" class="btn-ai" onclick="aiGenerateTasks()">✨ AI Auto-Generate Routine</button>
         </div>
-        <textarea id="setupTasksInput" class="form-input" placeholder="Type tasks or click AI Auto-Generate..."></textarea>
+        <textarea id="setupTasksInput" class="form-input"></textarea>
       </div>
 
       <button class="btn-primary" onclick="initializeProtocol()">Launch Protocol HUD</button>
@@ -481,7 +481,6 @@
   </div>
 
   <script>
-    // Register Service Worker for PWA installation support
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -505,12 +504,32 @@
     let config = JSON.parse(localStorage.getItem("apex_protocol_config") || "null");
     let timeline = [];
 
+    // Automatically set today's date on load
+    const todayISO = new Date().toISOString().split("T")[0];
+    document.getElementById("setupStartDate").value = todayISO;
+    
+    // Default end date (e.g., 90 days later or Dec 31)
+    const defaultEnd = new Date();
+    defaultEnd.setDate(defaultEnd.getDate() + 90);
+    document.getElementById("setupEndDate").value = defaultEnd.toISOString().split("T")[0];
+
+    // Default tasks including clean self-control focus
+    document.getElementById("setupTasksInput").value = 
+      "Wake up at 05:00 AM (Zero snoozing)\n" +
+      "Morning Workout (40 min session complete)\n" +
+      "Hydrate (3-4 Liters across the day)\n" +
+      "College Free Time: 45 min deep study / upskilling\n" +
+      "Commute Growth: 15 min book read or audio learning\n" +
+      "Pre-shift clean nutrition (No fast food on the road)\n" +
+      "Swiggy shift locked in (7 PM – 11 PM)\n" +
+      "Complete self-discipline (Zero porn/masturbation)\n" +
+      "In bed & phone down by 11:30 PM";
+
     function aiGenerateTasks() {
       const presets = [
-        "Wake up at 05:00 AM without snoozing\nMorning physical training session (45 mins)\nHydrate (3 Liters minimum)\nDeep work / Skill study block (2 hours)\nRead 15 pages of a book\nZero junk food or shortcuts\nIn bed & phone down by 11:00 PM",
-        "Early wake up & cold shower protocol\nDaily workout or step target (10,000 steps)\nFocused study or work block\nSkill upskilling session (coding/languages)\nClean nutrition compliance\nPhone screen time limit under 2 hours\nPlan tomorrow before sleep"
+        "Wake up at 05:00 AM without snoozing\nMorning physical training session (45 mins)\nHydrate (3 Liters minimum)\nDeep work / Skill study block (2 hours)\nComplete self-control (Zero porn/masturbation)\nRead 15 pages of a book\nIn bed & phone down by 11:00 PM"
       ];
-      document.getElementById("setupTasksInput").value = presets[Math.floor(Math.random() * presets.length)];
+      document.getElementById("setupTasksInput").value = presets[0];
       document.getElementById("setupTitleInput").value = "Apex Elite Protocol";
     }
 
@@ -538,12 +557,7 @@
       const tasks = rawTasks.split("\n").map(t => t.trim()).filter(t => t.length > 0);
 
       if (!start || !end || tasks.length === 0) {
-        alert("Please provide valid start date, end date, and at least one task.");
-        return;
-      }
-
-      if (new Date(start) > new Date(end)) {
-        alert("Start date cannot be after end date.");
+        alert("Please provide valid dates and tasks.");
         return;
       }
 
@@ -555,8 +569,7 @@
     function resetProtocolSetup() {
       if (confirm("Resetting will clear your current configuration setup. Proceed?")) {
         localStorage.removeItem("apex_protocol_config");
-        document.getElementById("mainApp").classList.remove("active");
-        document.getElementById("setupScreen").classList.add("active");
+        location.reload();
       }
     }
 
@@ -588,9 +601,8 @@
 
       daySelect.onchange = (e) => renderProtocol(e.target.value);
 
-      const todayStr = new Date().toISOString().split("T")[0];
-      const match = timeline.find(d => d.toISOString().split("T")[0] === todayStr);
-      daySelect.value = match ? todayStr : timeline[0].toISOString().split("T")[0];
+      const match = timeline.find(d => d.toISOString().split("T")[0] === todayISO);
+      daySelect.value = match ? todayISO : timeline[0].toISOString().split("T")[0];
 
       renderProtocol(daySelect.value);
       renderAnalytics();
@@ -627,9 +639,7 @@
       const idx = timeline.findIndex(d => d.toISOString().split("T")[0] === dateStr);
       document.getElementById("phaseTag").textContent = `Day ${idx + 1} of ${timeline.length}`;
 
-      const realTodayStr = new Date().toISOString().split("T")[0];
-      const isPastDate = dateStr < realTodayStr;
-
+      const isPastDate = dateStr < todayISO;
       const lockoutBanner = document.getElementById("lockoutBanner");
       if (isPastDate) {
         lockoutBanner.classList.add("active");
